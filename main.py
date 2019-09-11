@@ -74,13 +74,14 @@ w_initial = 0.5
 
 # I have try alpha=0, 1e-3, 1e-2, 1e-1, 1
 # Looks like it have numerical stability issue when alpha is small
-alpha = 1
+# alpha need to be within [0, 1]
+alpha = 0.5
 
 # convention:
 # 1. w for female, 1-w for male
 # 2. because we are doing minimization, first term is squared, the second term is flipped.
 def objective(w):
-	obj = alpha * ((w * Y_1_female - (1-w) * Y_1_male)**2 + (w * Y_0_female - (1-w) * Y_0_male)**2) - (w * (TP_female + TN_female) + (1-w) *(TP_male+TN_male))
+	obj = alpha * ((w * Y_1_female - (1-w) * Y_1_male)**2 + (w * Y_0_female - (1-w) * Y_0_male)**2) - (1-alpha)*(w * (TP_female + TN_female) + (1-w) *(TP_male+TN_male))
 	return obj
 
 solution = scipy.optimize.minimize(objective, [w_initial], method='TNC', bounds=[(0, 1)])
