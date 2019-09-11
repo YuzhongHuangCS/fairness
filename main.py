@@ -33,7 +33,7 @@ Y_train = Y.iloc[:n_train]
 Y_test = Y.iloc[n_train:]
 
 #clf = sklearn.tree.DecisionTreeClassifier()
-clf = sklearn.ensemble.RandomForestClassifier()
+clf = sklearn.ensemble.RandomForestClassifier(random_state=1)
 clf.fit(X_train, Y_train)
 print('Test set accuracy: {}'.format(clf.score(X_test, Y_test)))
 
@@ -76,8 +76,9 @@ w_initial = 0.5
 # Looks like it have numerical stability issue when alpha is small
 alpha = 1
 
-# convention: w for female, 1-w for male
-# because we are doing minimization, the second term is flipped
+# convention:
+# 1. w for female, 1-w for male
+# 2. because we are doing minimization, first term is squared, the second term is flipped.
 def objective(w):
 	obj = alpha * ((w * Y_1_female - (1-w) * Y_1_male)**2 + (w * Y_0_female - (1-w) * Y_0_male)**2) - (w * (TP_female + TN_female) + (1-w) *(TP_male+TN_male))
 	return obj
