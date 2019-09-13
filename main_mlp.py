@@ -108,8 +108,8 @@ with tf.Session() as sess:
 	sess.run(tf.global_variables_initializer())
 
 	for epoch in range(1000):
-		loss_train, w_train, loss_imparity_train, accuracy_train, pred_train, _train_step = sess.run(
-			[loss, w, loss_imparity, accuracy, pred, train_op],
+		loss_train, w_train, loss_imparity_train, loss_outcome_train, accuracy_train, _train_step = sess.run(
+			[loss, w, loss_imparity, loss_outcome, accuracy, train_op],
 				feed_dict={
 					X_placeholder: X_train,
 					Y_placeholder: Y_train,
@@ -122,8 +122,8 @@ with tf.Session() as sess:
 				}
 		)
 
-		loss_test, loss_imparity_test, accuracy_test = sess.run(
-			[loss, loss_imparity, accuracy],
+		loss_test, loss_imparity_test, loss_outcome_test, accuracy_test = sess.run(
+			[loss, loss_imparity, loss_outcome, accuracy],
 				feed_dict={
 					X_placeholder: X_test,
 					Y_placeholder: Y_test,
@@ -136,6 +136,6 @@ with tf.Session() as sess:
 				}
 		)
 
-		print(epoch, w_train, loss_train, loss_imparity_train, accuracy_train, sklearn.metrics.accuracy_score(Y_train[:, 1], pred_train), loss_test, loss_imparity_test, accuracy_test)
+		print(epoch, w_train, loss_train, accuracy_train, loss_imparity_train, loss_outcome_train, loss_test, accuracy_test, loss_imparity_test, loss_outcome_test)
 	pdb.set_trace()
 	print('OK')
