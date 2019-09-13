@@ -1,6 +1,7 @@
 # Data preprocessing
 # 1. Add header to data
 # 2. Remove unknown: sed '/\?/d' adult.data > adult_known.data
+# 3. Remove tailing . in "adult.test": sed 's/.$//' adult_known.test > adult_known.test2
 
 import sklearn
 import sklearn.tree
@@ -59,12 +60,12 @@ print('TP_female', TP_female)
 print('TN_female', TN_female)
 
 
-Y_1_female = sum(Y_test_female) / n_test
+Y_1_female = sum(Y_pred_female) / n_test
 Y_0_female = 1 - Y_1_female
 print('Y_1_female', Y_1_female)
 print('Y_0_female', Y_0_female)
 
-Y_1_male = sum(Y_test_male) / n_test
+Y_1_male = sum(Y_pred_male) / n_test
 Y_0_male = 1 - Y_1_male
 print('Y_1_male', Y_1_male)
 print('Y_0_male', Y_0_male)
@@ -87,5 +88,5 @@ def objective(w):
 solution = scipy.optimize.minimize(objective, [w_initial], method='TNC', bounds=[(0, 1)])
 print(solution)
 print('The optimal w is: {}'.format(solution.x))
-pdb.set_trace()
-print('Pause before exit')
+#pdb.set_trace()
+#print('Pause before exit')
