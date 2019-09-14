@@ -26,27 +26,32 @@ df = pd.get_dummies(df_raw, columns=['workclass', 'education', 'marital-status',
 # binrary feature will be mapped to two categories. Remove one of them.
 df = df.drop(columns=['sex_Male', 'Y_<=50K'])
 X = df.drop(columns=['Y_>50K'])
+group_label = X['sex_Female']
+
+scaler = sklearn.preprocessing.StandardScaler()
+X_scaled = scaler.fit_transform(X)
 Y = df['Y_>50K']
 
-X_train = X.iloc[:n_train]
-X_test = X.iloc[n_train:]
+X_train = X_scaled[:n_train]
+X_test = X_scaled[n_train:]
 Y_train = Y.iloc[:n_train]
 Y_test = Y.iloc[n_train:]
 
-index_male_train = np.where(X_train['sex_Female'] == 0)[0].astype(np.int32)
-index_female_train = np.where(X_train['sex_Female'] == 1)[0].astype(np.int32)
-index_male_true_train = np.where(np.logical_and(X_train['sex_Female'] == 0, Y_train==1))[0].astype(np.int32)
-index_male_false_train = np.where(np.logical_and(X_train['sex_Female'] == 0, Y_train==0))[0].astype(np.int32)
-index_female_true_train = np.where(np.logical_and(X_train['sex_Female'] == 1, Y_train==1))[0].astype(np.int32)
-index_female_false_train = np.where(np.logical_and(X_train['sex_Female'] == 1, Y_train==0))[0].astype(np.int32)
+index_male_train = np.where(group_label[:n_train] == 0)[0].astype(np.int32)
+index_female_train = np.where(group_label[:n_train] == 1)[0].astype(np.int32)
+index_male_true_train = np.where(np.logical_and(group_label[:n_train] == 0, Y_train==1))[0].astype(np.int32)
+index_male_false_train = np.where(np.logical_and(group_label[:n_train] == 0, Y_train==0))[0].astype(np.int32)
+index_female_true_train = np.where(np.logical_and(group_label[:n_train] == 1, Y_train==1))[0].astype(np.int32)
+index_female_false_train = np.where(np.logical_and(group_label[:n_train] == 1, Y_train==0))[0].astype(np.int32)
 
-index_male_test = np.where(X_test['sex_Female'] == 0)[0].astype(np.int32)
-index_female_test = np.where(X_test['sex_Female'] == 1)[0].astype(np.int32)
-index_male_true_test = np.where(np.logical_and(X_test['sex_Female'] == 0, Y_test==1))[0].astype(np.int32)
-index_male_false_test = np.where(np.logical_and(X_test['sex_Female'] == 0, Y_test==0))[0].astype(np.int32)
-index_female_true_test = np.where(np.logical_and(X_test['sex_Female'] == 1, Y_test==1))[0].astype(np.int32)
-index_female_false_test = np.where(np.logical_and(X_test['sex_Female'] == 1, Y_test==0))[0].astype(np.int32)
+index_male_test = np.where(group_label[n_train:] == 0)[0].astype(np.int32)
+index_female_test = np.where(group_label[n_train:] == 1)[0].astype(np.int32)
+index_male_true_test = np.where(np.logical_and(group_label[n_train:] == 0, Y_test==1))[0].astype(np.int32)
+index_male_false_test = np.where(np.logical_and(group_label[n_train:] == 0, Y_test==0))[0].astype(np.int32)
+index_female_true_test = np.where(np.logical_and(group_label[n_train:] == 1, Y_test==1))[0].astype(np.int32)
+index_female_false_test = np.where(np.logical_and(group_label[n_train:] == 1, Y_test==0))[0].astype(np.int32)
 
+# put Y into one hot label
 Y_train = np.stack([Y_train, 1-Y_train]).T
 Y_test = np.stack([Y_test, 1-Y_test]).T
 
@@ -63,21 +68,19 @@ index_male_false_placeholder = tf.placeholder(tf.int32, [None])
 index_female_true_placeholder = tf.placeholder(tf.int32, [None])
 index_female_false_placeholder = tf.placeholder(tf.int32, [None])
 
-W1 = tf.get_variable('weight1', shape=(DIM_INPUT, DIM_HIDDEN), initializer=tf.glorot_uniform_initializer())
-b1 = tf.get_variable('bias1', shape=(1, DIM_HIDDEN), initializer=tf.zeros_initializer())
-W2 = tf.get_variable('weight2', shape=(DIM_HIDDEN, DIM_OUTPUT), initializer=tf.glorot_uniform_initializer())
-b2 = tf.get_variable('bias2', shape=(1, DIM_OUTPUT), initializer=tf.zeros_initializer())
+# w is the importance of female
 w_raw = tf.Variable(0.0)
 w = tf.math.sigmoid(w_raw)
 
 # alpha: importance of imparity loss
 # beta: importance of imparity loss + outcome loss
-alpha = 0.01
-beta = 0.99
+alpha = 0.5
+beta = 0.5
 
-output = tf.matmul(tf.nn.relu(tf.matmul(X_placeholder, W1) + b1), W2) + b2
+L1_output = tf.layers.dense(X_placeholder, DIM_HIDDEN, activation=tf.nn.leaky_relu)
+output = tf.layers.dense(L1_output, DIM_OUTPUT, activation=None)
+
 prob = tf.nn.softmax(output)
-
 prob_male = tf.nn.embedding_lookup(prob, index_male_placeholder)
 prob_female = tf.nn.embedding_lookup(prob, index_female_placeholder)
 prob_male_true = tf.nn.embedding_lookup(prob, index_male_true_placeholder)
@@ -96,16 +99,22 @@ diff = tf.to_float(pred) - Y_placeholder[:, 1]
 accuracy = 1 - tf.math.reduce_mean(tf.math.abs(diff))
 
 loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=Y_placeholder, logits=output))
-loss_reg = (1-beta)*loss + beta * (alpha * loss_imparity + (1-alpha) * loss_outcome)
+loss_all = (1-beta)*loss + beta * (alpha * loss_imparity + (1-alpha) * loss_outcome)
 
 for v in tf.trainable_variables():
-	loss_reg += 5e-4 * tf.nn.l2_loss(v) + 1e-8 * tf.losses.absolute_difference(v, tf.zeros(tf.shape(v)))
+	loss_all += 1e-4 * tf.nn.l2_loss(v) + 1e-6 * tf.losses.absolute_difference(v, tf.zeros(tf.shape(v)))
 
-optimizer = tf.train.AdamOptimizer(1e-4)
-train_op = optimizer.minimize(loss_reg)
+lr = tf.Variable(0.01, name='lr', trainable=False)
+lr_decay_op = lr.assign(lr * 0.95)
+optimizer = tf.train.AdamOptimizer(lr)
+train_op = optimizer.minimize(loss_all)
 
 with tf.Session() as sess:
 	sess.run(tf.global_variables_initializer())
+
+	wait = 0
+	smallest_loss_train = float('inf')
+	n_lr_decay = 5
 
 	for epoch in range(1000):
 		loss_train, w_train, loss_imparity_train, loss_outcome_train, accuracy_train, _train_step = sess.run(
@@ -135,6 +144,17 @@ with tf.Session() as sess:
 					index_female_false_placeholder: index_female_false_test,
 				}
 		)
+
+		if loss_train <= smallest_loss_train:
+			smallest_loss_train = loss_train
+			wait = 0
+			print('New smallest')
+		else:
+			wait += 1
+			print('Wait {}'.format(wait))
+			if wait % n_lr_decay == 0:
+				sess.run(lr_decay_op)
+				print('Apply lr decay, new lr: %f' % lr.eval())
 
 		print(epoch, w_train, loss_train, accuracy_train, loss_imparity_train, loss_outcome_train, loss_test, accuracy_test, loss_imparity_test, loss_outcome_test)
 	pdb.set_trace()
