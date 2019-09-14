@@ -1,0 +1,37 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\begin{document}
+\section{Loss Definition}
+Denote:\\
+$G = \{female, male\}$, abbreviated as $f$ and $m$\\
+$w \in [0, 1]$ is a trainable weight. $w$ is the weight for female, $1-w$ is the weight for male\\
+$\alpha \in [0, 1]$ is a hyper parameter we choose for the weight of $L_{imparity}$\\
+$\beta \in [0, 1]$ is a hyper parameter we choose for the weight of $\alpha L_{imparity} + (1-\alpha)L_{outcome}$
+\subsection{Imparity loss}
+Note: Squared difference is used here. May use absolute difference.
+\begin{equation}\begin{split}\label{eq:imparity_loss}
+L_{imparity} & = (w \cdot P(\hat{Y} = 1|G=f) - (1-w) \cdot P(\hat{Y}=1|G=m))^2\\
+& + (w \cdot P(\hat{Y} = 0|G=f) - (1-w) \cdot P(\hat{Y}=0|G=m))^2
+\end{split}\end{equation}
+\subsection{Outcome loss}
+\begin{equation}\begin{split}\label{eq:outcome_loss}
+L_{outcome} & = -\bigg(w \cdot \left(P(\hat{Y} = 1|G=f, Y=1) + P(\hat{Y} = 0|G=f, Y=0)\right)\\
+& + (1-w) \cdot \left(P(\hat{Y} = 1|G=m, Y=1) + P(\hat{Y} = 0|G=m, Y=0)\right) \bigg)
+\end{split}\end{equation}
+\subsection{Cross entropy loss}
+\begin{equation}\label{eq:entropy_loss}
+L_{cross entropy} = -\frac{1}{n}\sum_{i=1}^n \bigg(y_i \cdot log(P(\hat{y_i}=1)) + (1-y_i) \cdot log(P(\hat{y_i}=0))\bigg)
+\end{equation}
+\subsection{Total loss}
+\begin{equation}\label{eq:total_loss}
+L_{total} = \beta \cdot (\alpha \cdot L_{imparity} + (1-\alpha) \cdot L_{outcome}) +(1-\beta) \cdot L_{crossentropy}
+\end{equation}
+\subsection{Implementation Note}
+By definition, $P(\hat{Y} = 1)$ is calculated after performing argmax on probabilities, which will lost gradient. Instead we use the following equation to directly calculate on probabilities to keep gradients.
+\begin{equation}\begin{split}\label{eq:assumption1}
+P(\hat{Y}=1) = \frac{1}{n}\sum_{i=1}^n P(\hat{y_i} = 1)\\
+P(\hat{Y}=0) = \frac{1}{n}\sum_{i=1}^n P(\hat{y_i} = 0)
+\end{split}\end{equation}
+\end{document}
