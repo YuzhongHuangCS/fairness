@@ -65,9 +65,9 @@ index_female_true_test = np.where(np.logical_and(group_label[n_train+n_dev:] == 
 index_female_false_test = np.where(np.logical_and(group_label[n_train+n_dev:] == 1, Y_test==0))[0].astype(np.int32)
 
 # put Y into one hot label
-Y_train = np.stack([Y_train, 1-Y_train]).T
-Y_dev = np.stack([Y_dev, 1-Y_dev]).T
-Y_test = np.stack([Y_test, 1-Y_test]).T
+Y_train = np.stack([1-Y_train, Y_train]).T
+Y_dev = np.stack([1-Y_dev, Y_dev]).T
+Y_test = np.stack([1-Y_test, Y_test]).T
 
 DIM_INPUT = X_train.shape[1]
 DIM_HIDDEN = 256
@@ -113,7 +113,6 @@ loss_outcome = -w*(tf.reduce_mean(prob_female_true[:, 1] + tf.reduce_mean(prob_f
 pred = tf.math.argmax(prob, axis=1)
 diff = tf.to_float(pred) - Y_placeholder[:, 1]
 accuracy = 1 - tf.math.reduce_mean(tf.math.abs(diff))
-
 loss_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=Y_placeholder, logits=output))
 loss_total = beta * (alpha * loss_imparity + (1-alpha) * loss_outcome) + (1-beta)*loss_entropy
 
@@ -135,8 +134,8 @@ with tf.Session() as sess:
 	patience_lr_decay = 5
 
 	for epoch in range(100000):
-		w_train, loss_total_train, loss_entropy_train, accuracy_train, loss_imparity_train, loss_outcome_train, train_step = sess.run(
-			[w, loss_total, loss_entropy, accuracy, loss_imparity, loss_outcome, train_op],
+		w_train, loss_total_train, loss_entropy_train, accuracy_train, loss_imparity_train, loss_outcome_train, pred_train, train_step = sess.run(
+			[w, loss_total, loss_entropy, accuracy, loss_imparity, loss_outcome, pred, train_op],
 				feed_dict={
 					X_placeholder: X_train,
 					Y_placeholder: Y_train,
@@ -149,8 +148,8 @@ with tf.Session() as sess:
 				}
 		)
 
-		loss_total_dev, loss_entropy_dev, accuracy_dev, loss_imparity_dev, loss_outcome_dev= sess.run(
-			[loss_total, loss_entropy, accuracy, loss_imparity, loss_outcome],
+		loss_total_dev, loss_entropy_dev, accuracy_dev, loss_imparity_dev, loss_outcome_dev, pred_dev= sess.run(
+			[loss_total, loss_entropy, accuracy, loss_imparity, loss_outcome, pred],
 				feed_dict={
 					X_placeholder: X_dev,
 					Y_placeholder: Y_dev,
@@ -177,8 +176,8 @@ with tf.Session() as sess:
 	 		break
 
 		print(f'Epoch: {epoch}, W: {w_train}\ntotal_train: {loss_total_train}, entropy_train: {loss_entropy_train}, accuracy_train: {accuracy_train}, imparity_train: {loss_imparity_train}, outcome_train: {loss_outcome_dev}\ntotal_dev : {loss_total_dev}, entropy_dev : {loss_entropy_dev}, accuracy_dev : {accuracy_dev}, imparity_dev : {loss_imparity_dev}, outcome_dev : {loss_outcome_dev}\n')
-		
-	loss_total_test, loss_entropy_test, accuracy_test, loss_imparity_test, loss_outcome_test,test_pred = sess.run(
+
+	loss_total_test, loss_entropy_test, accuracy_test, loss_imparity_test, loss_outcome_test, pred_test = sess.run(
 			[loss_total, loss_entropy, accuracy, loss_imparity, loss_outcome,pred],
 				feed_dict={
 					X_placeholder: X_test,
@@ -193,7 +192,19 @@ with tf.Session() as sess:
 	)
 	print(f'total_test: {loss_total_test}, entropy_test: {loss_entropy_test}, accuracy_test: {accuracy_test}, imparity_test: {loss_imparity_test}, outcome_test: {loss_outcome_test}')
 	print("*****************")
-	print(test_pred)
-	print(len(test_pred))
+
+	print('===train predictions===')
+	print(pred_train)
+	print(len(pred_train))
+
+	print('===dev predictions===')
+	print(pred_dev)
+	print(len(pred_dev))
+
+
+	print('===test predictions===')
+	print(pred_test)
+	print(len(pred_test))
+
 	pdb.set_trace()
 	print('Pause before exit')

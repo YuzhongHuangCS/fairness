@@ -52,8 +52,8 @@ index_female_true_test = np.where(np.logical_and(group_label[n_train:] == 1, Y_t
 index_female_false_test = np.where(np.logical_and(group_label[n_train:] == 1, Y_test==0))[0].astype(np.int32)
 
 # put Y into one hot label
-Y_train = np.stack([Y_train, 1-Y_train]).T
-Y_test = np.stack([Y_test, 1-Y_test]).T
+Y_train = np.stack([1-Y_train, Y_train]).T
+Y_test = np.stack([1-Y_test, Y_test]).T
 
 DIM_INPUT = X_train.shape[1]
 DIM_HIDDEN = 256
@@ -99,7 +99,6 @@ loss_outcome = -w*(tf.reduce_mean(prob_female_true[:, 1] + tf.reduce_mean(prob_f
 pred = tf.math.argmax(prob, axis=1)
 diff = tf.to_float(pred) - Y_placeholder[:, 1]
 accuracy = 1 - tf.math.reduce_mean(tf.math.abs(diff))
-
 loss_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=Y_placeholder, logits=output))
 loss_total = beta * (alpha * loss_imparity + (1-alpha) * loss_outcome) + (1-beta)*loss_entropy
 
