@@ -126,10 +126,10 @@ prob_male_false = tf.nn.embedding_lookup(prob, index_male_false_placeholder)
 prob_female_true = tf.nn.embedding_lookup(prob, index_female_true_placeholder)
 prob_female_false = tf.nn.embedding_lookup(prob, index_female_false_placeholder)
 
-#fairness_loss = tf.math.squared_difference(tf.reduce_mean(prob_female[:, 1]+data_female_one_placeholder), tf.reduce_mean(prob_male[:, 1])+data_male_one_placeholder) \
-#			  + tf.math.squared_difference(tf.reduce_mean(prob_female[:, 0])+data_female_zero_placeholder, tf.reduce_mean(prob_male[:, 0])+data_male_zero_placeholder)
-fairness_loss = tf.math.squared_difference(tf.reduce_mean(prob_female[:, 1]), tf.reduce_mean(prob_male[:, 1])) \
-			  + tf.math.squared_difference(tf.reduce_mean(prob_female[:, 0]), tf.reduce_mean(prob_male[:, 0]))
+fairness_loss = tf.math.squared_difference(tf.reduce_mean(prob_female[:, 1]+data_female_one_placeholder), tf.reduce_mean(prob_male[:, 1])+data_male_one_placeholder) \
+			  + tf.math.squared_difference(tf.reduce_mean(prob_female[:, 0])+data_female_zero_placeholder, tf.reduce_mean(prob_male[:, 0])+data_male_zero_placeholder)
+#fairness_loss = tf.math.squared_difference(tf.reduce_mean(prob_female[:, 1]), tf.reduce_mean(prob_male[:, 1])) \
+#			  + tf.math.squared_difference(tf.reduce_mean(prob_female[:, 0]), tf.reduce_mean(prob_male[:, 0]))
 
 label_male = tf.nn.embedding_lookup(Y_placeholder, index_male_placeholder)
 label_female = tf.nn.embedding_lookup(Y_placeholder, index_female_placeholder)
