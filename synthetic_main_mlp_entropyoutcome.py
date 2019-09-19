@@ -107,8 +107,17 @@ prob_female_false = tf.nn.embedding_lookup(prob, index_female_false_placeholder)
 loss_imparity = tf.math.squared_difference(w*tf.reduce_mean(prob_female[:, 1]), (1-w)*tf.reduce_mean(prob_male[:, 1])) \
 			  + tf.math.squared_difference(w*tf.reduce_mean(prob_female[:, 0]), (1-w)*tf.reduce_mean(prob_male[:, 0]))
 
+label_male = tf.nn.embedding_lookup(Y_placeholder, index_male_placeholder)
+label_female = tf.nn.embedding_lookup(Y_placeholder, index_female_placeholder)
+output_male = tf.nn.embedding_lookup(output, index_male_placeholder)
+output_female = tf.nn.embedding_lookup(output, index_female_placeholder)
+
+'''
 loss_outcome = -w*(tf.reduce_mean(prob_female_true[:, 1] + tf.reduce_mean(prob_female_false[:, 0]))) \
 			 - (1-w)*(tf.reduce_mean(prob_male_true[:, 1] + tf.reduce_mean(prob_male_false[:, 0]))) \
+'''
+loss_outcome = w * tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=label_female, logits=output_female)) \
+			 + (1-w) * tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=label_male, logits=output_male)) \
 
 pred = tf.math.argmax(prob, axis=1)
 diff = tf.to_float(pred) - Y_placeholder[:, 1]
