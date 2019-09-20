@@ -62,24 +62,20 @@ index_male_false_test = np.where(np.logical_and(group_label[n_train+n_dev:] == 0
 index_female_true_test = np.where(np.logical_and(group_label[n_train+n_dev:] == 1, Y_test==1))[0].astype(np.int32)
 index_female_false_test = np.where(np.logical_and(group_label[n_train+n_dev:] == 1, Y_test==0))[0].astype(np.int32)
 
-print("************************************")
-print(index_male_test.shape[0])
-print(index_male_dev.shape[0])
+train_data_one_female_prob = group_label[:n_train][index_female_true_train].shape[0]/index_female_train.shape[0]
+train_data_zero_female_prob = group_label[:n_train][index_female_false_train].shape[0] /index_female_train.shape[0]
+train_data_one_male_prob = group_label[:n_train][index_male_true_train].shape[0]/index_male_train.shape[0]
+train_data_zero_male_prob = group_label[:n_train][index_male_false_train].shape[0]/index_male_train.shape[0]
 
-train_data_one_female_prob = group_label[index_female_true_train].shape[0]/index_female_train.shape[0]
-train_data_zero_female_prob = group_label[index_female_false_train].shape[0]/index_female_train.shape[0]
-train_data_one_male_prob = group_label[index_male_true_train].shape[0]/index_male_train.shape[0]
-train_data_zero_male_prob = group_label[index_male_false_train].shape[0]/index_male_train.shape[0]
+dev_data_one_female_prob = group_label[n_train:n_train+n_dev][index_female_true_dev].shape[0]/index_female_dev.shape[0]
+dev_data_zero_female_prob = group_label[n_train:n_train+n_dev][index_female_false_dev].shape[0]/index_female_dev.shape[0]
+dev_data_one_male_prob = group_label[n_train:n_train+n_dev][index_male_true_dev].shape[0]/index_male_dev.shape[0]
+dev_data_zero_male_prob = group_label[n_train:n_train+n_dev][index_male_false_dev].shape[0]/index_male_dev.shape[0]
 
-dev_data_one_female_prob = group_label[index_female_true_dev].shape[0]/index_female_dev.shape[0]
-dev_data_zero_female_prob = group_label[index_female_false_dev].shape[0]/index_female_dev.shape[0]
-dev_data_one_male_prob = group_label[index_male_true_dev].shape[0]/index_male_dev.shape[0]
-dev_data_zero_male_prob = group_label[index_male_false_dev].shape[0]/index_male_dev.shape[0]
-
-test_data_one_female_prob = group_label[index_female_true_test].shape[0]/index_female_test.shape[0]
-test_data_zero_female_prob = group_label[index_female_false_test].shape[0]/index_female_test.shape[0]
-test_data_one_male_prob = group_label[index_male_true_test].shape[0]/index_male_test.shape[0]
-test_data_zero_male_prob = group_label[index_male_false_test].shape[0]/index_male_test.shape[0]
+test_data_one_female_prob = group_label[n_train+n_dev:][index_female_true_test].shape[0]/index_female_test.shape[0]
+test_data_zero_female_prob = group_label[n_train+n_dev:][index_female_false_test].shape[0]/index_female_test.shape[0]
+test_data_one_male_prob = group_label[n_train+n_dev:][index_male_true_test].shape[0]/index_male_test.shape[0]
+test_data_zero_male_prob = group_label[n_train+n_dev:][index_male_false_test].shape[0]/index_male_test.shape[0]
 
 
 # put Y into one hot label
@@ -245,6 +241,17 @@ with tf.Session() as sess:
 	print(pred_test)
 	print(len(pred_test))
 	print(sum(pred_test))
+
+	print("************************************")
+	print(train_data_one_female_prob)
+	print(train_data_zero_female_prob)
+	print(train_data_one_male_prob)
+	print(train_data_zero_male_prob)
+	print(group_label[index_female_true_train].shape)
+	print(group_label[index_female_false_train].shape)
+	print(index_female_train.shape)
+	print(index_male_train.shape)
+	print(n_train)
 
 	pdb.set_trace()
 	print('Pause before exit')
