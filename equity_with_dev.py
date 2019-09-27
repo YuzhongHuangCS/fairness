@@ -176,6 +176,7 @@ pred = tf.math.argmax(prob, axis=1)
 diff = tf.to_float(pred) - Y_placeholder[:, 1]
 accuracy = 1 - tf.math.reduce_mean(tf.math.abs(diff))
 loss_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=Y_placeholder, logits=output))
+
 #loss_total = beta * (fairness_loss) + (1-beta)*loss_entropy
 loss_total = loss_entropy
 
@@ -193,7 +194,21 @@ with tf.Session() as sess:
 
 	wait = 0
 	smallest_loss_total_dev = float('inf')
+	smallest_weight = None
 	patience_lr_decay = 5
+	patience_wait = 100
+
+	def _save_weight():
+		global smallest_weight
+		tf_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+		smallest_weight = sess.run(tf_vars)
+
+	def _load_weights():
+		tf_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+		ops = []
+		for i_tf in range(len(tf_vars)):
+			ops.append(tf.assign(tf_vars[i_tf], smallest_weight[i_tf]))
+		sess.run(ops)
 
 	for epoch in range(10000):
 		w_train, loss_total_train, loss_entropy_train, accuracy_train, fairness_loss_train, pred_train, train_step = sess.run(
@@ -234,6 +249,7 @@ with tf.Session() as sess:
 
 		if loss_total_dev <= smallest_loss_total_dev:
 			smallest_loss_total_dev = loss_total_dev
+			_save_weight()
 			wait = 0
 			print('New smallest')
 		else:
@@ -242,11 +258,14 @@ with tf.Session() as sess:
 			if wait % patience_lr_decay == 0:
 				sess.run(lr_decay_op)
 				print('Apply lr decay, new lr: %f' % lr.eval())
-		if(wait==100):
+
+		if wait == patience_wait:
 	 		break
 
 		print(f'Epoch: {epoch}, W: {w_train}\ntotal_train: {loss_total_train}, entropy_train: {loss_entropy_train}, accuracy_train: {accuracy_train}, imparity_train: {fairness_loss_train}\ntotal_dev : {loss_total_dev}, entropy_dev : {loss_entropy_dev}, accuracy_dev : {accuracy_dev}, imparity_dev : {fairness_loss_dev}\n')
 
+	print('Loading smallest_weight')
+	_load_weights()
 	loss_total_test, loss_entropy_test, accuracy_test, fairness_loss_test, pred_test = sess.run(
 			[loss_total, loss_entropy, accuracy, fairness_loss,  pred],
 				feed_dict={
